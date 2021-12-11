@@ -27,19 +27,26 @@ class RegioParser:
     def __init__(self):
         self.user_input = user_input()
         self.redis = self.redis_interface()
-        self.source_id = self.city_to_id(self.user_input['origin'])
-        self.destination_id = self.city_to_id(self.user_input['destination'])
 
-        routes = self.get_response(
-            self.source_id, self.destination_id, self.user_input['date'])
+        routes = self.routes_switch(
+            self.user_input['origin'], self.user_input['destination'], self.user_input['date'])
 
-        json_return = json.dumps(routes, indent=2)
+        self.json_return = json.dumps(routes, indent=2)
 
-        self.redis_save_journey(
-            self.user_input['origin'], self.user_input['destination'], self.user_input['date'], json_return)
+    def routes_switch(self, source, destination, date):
+        cache_value = self.redis_get_journey(
+            source, destination, date)
 
-        self.redis_return = self.redis_get_journey(self.user_input['origin'],
-                                                   self.user_input['destination'], self.user_input['date'])
+        if cache_value is not None:
+            print('cache_value')
+            return cache_value
+        else:
+            print('NOT cache')
+            routes = self.get_response(
+                source, destination, self.user_input['date'])
+
+            self.redis_save_journey(source, destination, date, routes)
+            return routes
 
     def redis_interface(self):
         redis_instance = "redis.pythonweekend.skypicker.com"
@@ -75,6 +82,9 @@ class RegioParser:
         return location_list
 
     def get_response(self, source, destination, date='2021-12-12'):
+        source = self.city_to_id(source)
+        destination = self.city_to_id(destination)
+
         host = 'https://brn-ybus-pubapi.sa.cz/restapi/routes/search/simple'
         params = {
             'tariffs': 'REGULAR',
@@ -146,6 +156,8 @@ class RegioParser:
 
 if __name__ == '__main__':
     parser = RegioParser()
+
+    print(parser.json_return)
 
     # user_input = user_input()
     # redis = redis_interface()

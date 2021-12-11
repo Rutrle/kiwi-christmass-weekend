@@ -20,3 +20,13 @@ IDE debugger - use it! - probably best
 
 
 => najít si co je to cache approach
+
+fastAPI - go to api v pythonu
+
+best practices:
+    USE json
+    api must be versioned
+    return error derails, correct status code
+    don't use verbs of you can
+    use plural names to name a collection
+    some  basics securization

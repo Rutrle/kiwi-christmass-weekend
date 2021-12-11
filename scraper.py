@@ -23,136 +23,143 @@ def user_input():
     return user_input
 
 
-def city_to_id(city, location_list):
-    for entry in location_list:
-        if city in entry['names']:
-            return entry['id']
+class RegioParser:
+    def __init__(self):
+        self.user_input = user_input()
+        self.redis = self.redis_interface()
+        self.source_id = self.city_to_id(self.user_input['origin'])
+        self.destination_id = self.city_to_id(self.user_input['destination'])
 
+        routes = self.get_response(
+            self.source_id, self.destination_id, self.user_input['date'])
 
-def create_location_list():
-    address = 'https://brn-ybus-pubapi.sa.cz/restapi/consts/locations'
-    response = requests.get(address).json()
-    location_list = []
-    for country in response:
-        for city in country['cities']:
-            name_list = city['aliases']
-            name_list.append(city['name'])
-            city_log = {
-                "id": city['id'],
-                "names": name_list
-            }
-            location_list.append(city_log)
+        json_return = json.dumps(routes, indent=2)
 
-    return location_list
+        self.redis_save_journey(
+            self.user_input['origin'], self.user_input['destination'], self.user_input['date'], json_return)
 
+        self.redis_return = self.redis_get_journey(self.user_input['origin'],
+                                                   self.user_input['destination'], self.user_input['date'])
 
-def get_response(source, destination, date='2021-12-12'):
+    def redis_interface(self):
+        redis_instance = "redis.pythonweekend.skypicker.com"
+        redis = Redis(host=redis_instance,  port=6379,  db=0)
 
-    # date = datetime.datetime.fromisoformat(date)
+        return redis
 
-    host = 'https://brn-ybus-pubapi.sa.cz/restapi/routes/search/simple'
-    params = {
-        'tariffs': 'REGULAR',
-        'toLocationType': 'CITY',
-        'toLocationId': destination,
-        'fromLocationType': 'CITY',
-        'fromLocationId': source,
-        'departureDate': date,
-        "locale": "cs"
-    }
+    def city_to_id(self, city):
+        if self.redis_get_locations(city) != None:
+            print(city, 'from cache')
+            return self.redis_get_locations(city)
 
-    response = requests.get(host,
-                            params=params)
-    response = response.json()
-    response_routes = response['routes']
-    cleaned_routes = []
+        location_list = self.create_location_list()
+        for entry in location_list:
+            if city in entry['names']:
+                self.redis_save_location(city, entry['id'])
+                return entry['id']
 
-    for route in response_routes:
-        current_route = {
-            "departure_datetime": route["departureTime"],
-            "arrival_datetime": route["arrivalTime"],
-            "source": source,
-            "destination": destination,
-            "fare": {
-                "amount": route['priceFrom'],
-                "currency": "EUR"
-            },
-            "type": route['vehicleTypes'],
-            "source_id": route['departureStationId'],
-            "destination_id": route['departureStationId'],
-            "free_seats": route['freeSeatsCount'],
-            "carrier": "REGIOJET"
+    def create_location_list(self):
+        address = 'https://brn-ybus-pubapi.sa.cz/restapi/consts/locations'
+        response = requests.get(address).json()
+        location_list = []
+        for country in response:
+            for city in country['cities']:
+                name_list = city['aliases']
+                name_list.append(city['name'])
+                city_log = {
+                    "id": city['id'],
+                    "names": name_list
+                }
+                location_list.append(city_log)
+
+        return location_list
+
+    def get_response(self, source, destination, date='2021-12-12'):
+        host = 'https://brn-ybus-pubapi.sa.cz/restapi/routes/search/simple'
+        params = {
+            'tariffs': 'REGULAR',
+            'toLocationType': 'CITY',
+            'toLocationId': destination,
+            'fromLocationType': 'CITY',
+            'fromLocationId': source,
+            'departureDate': date,
+            "locale": "cs"
         }
 
-        cleaned_routes.append(current_route)
+        response = requests.get(host,
+                                params=params)
+        response = response.json()
+        response_routes = response['routes']
+        cleaned_routes = []
 
-    return cleaned_routes
+        for route in response_routes:
+            current_route = {
+                "departure_datetime": route["departureTime"],
+                "arrival_datetime": route["arrivalTime"],
+                "source": source,
+                "destination": destination,
+                "fare": {
+                    "amount": route['priceFrom'],
+                    "currency": "EUR"
+                },
+                "type": route['vehicleTypes'],
+                "source_id": route['departureStationId'],
+                "destination_id": route['departureStationId'],
+                "free_seats": route['freeSeatsCount'],
+                "carrier": "REGIOJET"
+            }
 
+            cleaned_routes.append(current_route)
 
-def redis_interface():
+        return cleaned_routes
 
-    redis_instance = "redis.pythonweekend.skypicker.com"
+    def redis_save_journey(self, source, destination, date, value):
+        source = slugify(source, separator='_')
+        destination = slugify(destination, separator='_')
+        key = f"rutrle:journey:{source}_{destination}_{date}"
 
-    redis = Redis(host=redis_instance,  port=6379,  db=0)
+        self.redis.set(key, json.dumps(value))
 
-    return redis
+    def redis_get_journey(self, source, destination, date):
+        source = slugify(source, separator='_')
+        destination = slugify(destination, separator='_')
+        key = f"rutrle:journey:{source}_{destination}_{date}"
+        maybe_value = self.redis.get(key)
+        if maybe_value is None:
+            return None
+        return json.loads(maybe_value)
 
+    def redis_save_location(self, location, id):
+        location = slugify(location, separator='_')
+        key = f"rutrle:location:{location}"
+        self.redis.set(key, json.dumps(id))
 
-def redis_save_journey(redis, source, destination, date, value):
-    source = slugify(source, separator='_')
-    destination = slugify(destination, separator='_')
-    key = f"rutrle:journey:{source}_{destination}_{date}"
+    def redis_get_locations(self, location):
+        location = slugify(location, separator='_')
+        key = f"rutrle:location:{location}"
+        maybe_value = self.redis.get(key)
 
-    redis.set(key, json.dumps(value))
-
-
-def redis_get_journey(redis, source, destination, date):
-    source = slugify(source, separator='_')
-    destination = slugify(destination, separator='_')
-    key = f"rutrle:journey:{source}_{destination}_{date}"
-    maybe_value = redis.get(key)
-    if maybe_value is None:
-        return None
-    return json.loads(maybe_value)
-
-
-def redis_save_location(redis, location, id):
-    location = slugify(location, separator='_')
-    key = f"rutrle:location:{location}"
-    redis.set(key, json.dumps(id))
-
-
-def redis_get_locations(redis, location):
-    location = slugify(location, separator='_')
-    key = f"rutrle:location:{location}"
-    maybe_value = redis.get(key)
-
-    if maybe_value is None:
-        return None
-    return json.loads(maybe_value)
+        if maybe_value is None:
+            return None
+        return json.loads(maybe_value)
 
 
 if __name__ == '__main__':
-    user_input = user_input()
+    parser = RegioParser()
 
-    location_list = create_location_list()
-    source_id = city_to_id(user_input['origin'], location_list)
-    destination_id = city_to_id(user_input['destination'], location_list)
+    # user_input = user_input()
+    # redis = redis_interface()
 
-    routes = get_response(source_id, destination_id, user_input['date'])
+    # source_id = city_to_id(redis, user_input['origin'])
+    # destination_id = city_to_id(
+    #    redis, user_input['destination'])
 
-    json_return = json.dumps(routes, indent=2)
-    # print(json_return)
+    #routes = get_response(source_id, destination_id, user_input['date'])
 
-    redis = redis_interface()
-    redis_save_journey(
-        redis, user_input['origin'], user_input['destination'], user_input['date'], json_return)
+    #json_return = json.dumps(routes, indent=2)
 
-    redis_return = redis_get_journey(redis, user_input['origin'],
-                                     user_input['destination'], user_input['date'])
+    # redis_save_journey(
+    # redis, user_input['origin'], user_input['destination'], user_input['date'], json_return)
 
-    redis_save_location(redis, user_input['origin'], source_id)
-
-    redis_location = redis_get_locations(redis, user_input['origin'])
-    print(redis_return)
-    print(redis_location)
+    # redis_return = redis_get_journey(redis, user_input['origin'],
+    # user_input['destination'], user_input['date'])

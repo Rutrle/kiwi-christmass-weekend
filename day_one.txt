@@ -30,3 +30,6 @@ best practices:
     don't use verbs of you can
     use plural names to name a collection
     some  basics securization
+
+_____SQL
+SQL alchemy easier for python

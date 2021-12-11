@@ -30,10 +30,10 @@ class RegioParser:
 
         self.redis = self.redis_interface()
 
-        routes = self.routes_switch(
+        self.routes = self.routes_switch(
             self.user_origin, self.user_destination, self.user_date)
 
-        self.json_return = json.dumps(routes, indent=2)
+        self.json_return = json.dumps(self.routes, indent=2)
 
     def routes_switch(self, source, destination, date):
         cache_value = self.redis_get_journey(

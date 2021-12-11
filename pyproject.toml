@@ -11,6 +11,8 @@ redis = "^4.0.2"
 python-slugify = "^5.0.2"
 fastapi = "^0.70.0"
 uvicorn = {extras = ["standard"], version = "^0.16.0"}
+SQLAlchemy = "^1.4.28"
+psycopg2-binary = "^2.9.2"
 
 [tool.poetry.dev-dependencies]
 autopep8 = "^1.6.0"

@@ -1,7 +1,7 @@
 import requests
 import re
 import json
-from datetime import date
+import datetime
 import argparse
 
 
@@ -9,7 +9,11 @@ def user_input():
     parser = argparse.ArgumentParser()
     parser.add_argument('origin', type=str, help='Start of route')
     parser.add_argument('destination', type=str, help='End for route')
-    parser.add_argument('date', action='store_true', help='Date of departure')
+    parser.add_argument('date', type=str, help='Date of departure')
+
+    args = parser.parse_args()
+
+    return get_response(args.origin, args.destination, args.date)
 
 
 def city_to_id(city, location_list):
@@ -36,6 +40,10 @@ def create_location_list():
 
 
 def get_response(source, destination, date='2021-12-12'):
+    location_list = create_location_list()
+    source = city_to_id(source, location_list)
+    destination = city_to_id(destination, location_list)
+    #date = datetime.datetime.fromisoformat(date)
 
     host = 'https://brn-ybus-pubapi.sa.cz/restapi/routes/search/simple'
     params = {
@@ -51,8 +59,10 @@ def get_response(source, destination, date='2021-12-12'):
     response = requests.get(host,
                             params=params)
     response = response.json()
+    print(response)
     response_routes = response['routes']
     cleaned_routes = []
+
     for route in response_routes:
         current_route = {
             "departure_datetime": route["departureTime"],
@@ -76,9 +86,7 @@ def get_response(source, destination, date='2021-12-12'):
 
 
 if __name__ == '__main__':
-    location_list = create_location_list()
-    source_id = city_to_id('Brno', location_list)
-    destination_id = city_to_id('Praha', location_list)
-    routes = get_response(source_id, destination_id)
+    routes = user_input()
 
-    print(routes)
+    json_return = json.dumps(routes, indent=2)
+    print(json_return)

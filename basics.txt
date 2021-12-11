@@ -17,3 +17,8 @@ poetry init
 poetry add <package_name>
 
 install pycharm?
+
+____________-redis____________
+
+=> not to stay forever
+-> expire method

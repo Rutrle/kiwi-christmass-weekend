@@ -1,7 +1,6 @@
 import requests
 import re
 import json
-import datetime
 import argparse
 from slugify import slugify
 from redis import Redis
@@ -24,12 +23,15 @@ def user_input():
 
 
 class RegioParser:
-    def __init__(self):
-        self.user_input = user_input()
+    def __init__(self, user_origin, user_destination, user_date):
+        self.user_origin = user_origin
+        self.user_destination = user_destination
+        self.user_date = user_date
+
         self.redis = self.redis_interface()
 
         routes = self.routes_switch(
-            self.user_input['origin'], self.user_input['destination'], self.user_input['date'])
+            self.user_origin, self.user_destination, self.user_date)
 
         self.json_return = json.dumps(routes, indent=2)
 
@@ -43,14 +45,15 @@ class RegioParser:
         else:
             print('NOT cache')
             routes = self.get_response(
-                source, destination, self.user_input['date'])
+                source, destination, self.user_date)
 
             self.redis_save_journey(source, destination, date, routes)
             return routes
 
     def redis_interface(self):
         redis_instance = "redis.pythonweekend.skypicker.com"
-        redis = Redis(host=redis_instance,  port=6379,  db=0)
+        redis = Redis(host=redis_instance,  port=6379,
+                      db=0, decode_responses=True)
 
         return redis
 
@@ -155,7 +158,9 @@ class RegioParser:
 
 
 if __name__ == '__main__':
-    parser = RegioParser()
+    users_input = user_input()
+    parser = RegioParser(
+        users_input['origin'], users_input['destination'], users_input['date'])
 
     print(parser.json_return)
 

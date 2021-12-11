@@ -6,8 +6,10 @@ authors = ["Jakub Rutrle <rutrle@seznam.cz>"]
 
 [tool.poetry.dependencies]
 python = "^3.10"
+requests = "^2.26.0"
 
 [tool.poetry.dev-dependencies]
+autopep8 = "^1.6.0"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

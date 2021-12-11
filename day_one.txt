@@ -1,3 +1,19 @@
 418 error code - I'm a teapot
 
 GUI postman - methods, see API and so on
+
+
+inspect network tab in chrome
+
+_______debugging______
+print - not very interactive
+
+python shell
+
+ipython - more interactive
+
+using breakpoints
+    breakpoint()
+        ipdb
+
+IDE debugger - use it! - probably best

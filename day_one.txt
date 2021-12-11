@@ -17,3 +17,6 @@ using breakpoints
         ipdb
 
 IDE debugger - use it! - probably best
+
+
+=> najít si co je to cache approach

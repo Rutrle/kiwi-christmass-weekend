@@ -8,6 +8,7 @@ authors = ["Jakub Rutrle <rutrle@seznam.cz>"]
 python = "^3.10"
 requests = "^2.26.0"
 redis = "^4.0.2"
+python-slugify = "^5.0.2"
 
 [tool.poetry.dev-dependencies]
 autopep8 = "^1.6.0"

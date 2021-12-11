@@ -4,6 +4,7 @@ import json
 import argparse
 from slugify import slugify
 from redis import Redis
+import datetime
 
 
 def user_input():
@@ -23,17 +24,42 @@ def user_input():
 
 
 class RegioParser:
-    def __init__(self, user_origin, user_destination, user_date):
+    def __init__(self, user_origin, user_destination, user_date, passengers=None, date_to=None):
+        print(date_to)
+        if date_to == None:
+            date_to = user_date
+
         self.user_origin = user_origin
         self.user_destination = user_destination
-        self.user_date = user_date
+        self.user_date = datetime.datetime.fromisoformat(user_date)
+        self.passengers = passengers
 
-        self.redis = self.redis_interface()
+        self.date_to = datetime.datetime.fromisoformat(date_to)
 
-        self.routes = self.routes_switch(
-            self.user_origin, self.user_destination, self.user_date)
+        self.all_routes = []
 
-        self.json_return = json.dumps(self.routes, indent=2)
+        while self.user_date <= self.date_to:
+
+            self.redis = self.redis_interface()
+
+            self.uncleaned_routes = self.routes_switch(
+                self.user_origin, self.user_destination, self.user_date)
+
+            if self.passengers is not None:
+                self.routes = self.check_enough_seats(
+                    self.uncleaned_routes, self.passengers)
+            else:
+                self.routes = self.uncleaned_routes
+
+            self.user_date += datetime.timedelta(days=1)
+            self.all_routes.append(self.routes)
+
+    def check_enough_seats(self, routes, passengers):
+        new_routes = []
+        for route in routes:
+            if route['free_seats'] >= passengers:
+                new_routes.append(route)
+        return new_routes
 
     def routes_switch(self, source, destination, date):
         cache_value = self.redis_get_journey(
@@ -84,7 +110,7 @@ class RegioParser:
 
         return location_list
 
-    def get_response(self, source, destination, date='2021-12-12'):
+    def get_response(self, source, destination, date: datetime.datetime):
         source = self.city_to_id(source)
         destination = self.city_to_id(destination)
 
@@ -95,13 +121,14 @@ class RegioParser:
             'toLocationId': destination,
             'fromLocationType': 'CITY',
             'fromLocationId': source,
-            'departureDate': date,
+            'departureDate': date.isoformat(),
             "locale": "cs"
         }
 
         response = requests.get(host,
                                 params=params)
         response = response.json()
+        print(response)
         response_routes = response['routes']
         cleaned_routes = []
 
@@ -161,8 +188,6 @@ if __name__ == '__main__':
     users_input = user_input()
     parser = RegioParser(
         users_input['origin'], users_input['destination'], users_input['date'])
-
-    print(parser.json_return)
 
     # user_input = user_input()
     # redis = redis_interface()

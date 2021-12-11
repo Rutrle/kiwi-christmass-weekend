@@ -1,0 +1,19 @@
+Collections library
+nametuple, counter, chainmap, defaultdict
+
+tests
+
+raising exception from exception:
+
+
+dávat složitější podmínky do booleanů je dobrej nápad
+
+dictionary X json - json má double quotes
+
+
+poetry - deúemdemciews
+
+poetry init
+poetry add <package_name>
+
+install pycharm?

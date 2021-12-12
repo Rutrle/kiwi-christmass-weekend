@@ -5,6 +5,7 @@ import argparse
 from slugify import slugify
 from redis import Redis
 import datetime
+from database_hangler import database_connection, create_journey, get_journeys
 
 
 def user_input():
@@ -74,6 +75,7 @@ class RegioParser:
                 source, destination, self.user_date)
 
             self.redis_save_journey(source, destination, date, routes)
+            self.postgres_save_journey(routes)
             return routes
 
     def redis_interface(self):
@@ -183,25 +185,25 @@ class RegioParser:
             return None
         return json.loads(maybe_value)
 
+    def postgres_save_journey(self, routes):
+        for route in routes:
+            print(route['arrival_datetime'])
+            print(route)
+            data = {
+                "source": route['source'],
+                "destination": route['destination'],
+                "departure_datetime": datetime.datetime.fromisoformat(route['departure_datetime']),
+                "arrival_datetime": datetime.datetime.fromisoformat(route['arrival_datetime']),
+                "carrier": route["carrier"],
+                "vehicle_type": route['type'][0].lower(),
+                "price": route["fare"]["amount"],
+                "currency": "EUR"
+            }
+            with database_connection() as conn:
+                create_journey(conn, data)
+
 
 if __name__ == '__main__':
     users_input = user_input()
     parser = RegioParser(
         users_input['origin'], users_input['destination'], users_input['date'])
-
-    # user_input = user_input()
-    # redis = redis_interface()
-
-    # source_id = city_to_id(redis, user_input['origin'])
-    # destination_id = city_to_id(
-    #    redis, user_input['destination'])
-
-    #routes = get_response(source_id, destination_id, user_input['date'])
-
-    #json_return = json.dumps(routes, indent=2)
-
-    # redis_save_journey(
-    # redis, user_input['origin'], user_input['destination'], user_input['date'], json_return)
-
-    # redis_return = redis_get_journey(redis, user_input['origin'],
-    # user_input['destination'], user_input['date'])

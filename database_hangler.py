@@ -1,9 +1,13 @@
+from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.engine import Connection, Row
+from typing import Optional, List
+from sqlalchemy import select, Column, Integer, MetaData, Numeric, Sequence, String, Table, TEXT, UniqueConstraint, create_engine
 
 from sqlalchemy.dialects.postgresql import ENUM, TIMESTAMP
-from sqlalchemy import Column, Integer, MetaData, Numeric, Sequence, String, Table, TEXT, UniqueConstraint, create_engine
 from contextlib import contextmanager
 
 metadata = MetaData()
+
 Journeys = Table(
     "journeys_Rutrle",
     metadata,
@@ -21,7 +25,6 @@ Journeys = Table(
                      "arrival_datetime", "carrier", name="unique_journey_rutrle"),
 )
 
-
 DATABASE_URL = "postgresql://pythonweekend:9SRK7eJG6T8rirWW@sql.pythonweekend.skypicker.com/pythonweekend"
 engine = create_engine(
     DATABASE_URL,
@@ -31,16 +34,20 @@ engine = create_engine(
 )
 
 
+def create_journey(connection: Connection, journey) -> Optional[Row]:
+    query = insert(Journeys).values(
+        **journey).returning("*").on_conflict_do_nothing()  # rozbalí dict do jednotlivých parametrů
+    executed_query = connection.execute(query)
+    return executed_query.one_or_none()
+
+
 @contextmanager
 def database_connection():
     with engine.connect() as connection:
         yield connection
 
 
-'''
-creating
-
-In [1]: from database_handler import metadata, engine
-
-In [2]: metadata.create_all(engine)
-'''
+def get_journeys(connection: Connection, destination: str) -> List[Row]:
+    query = select(Journeys).where(Journeys.c.destination == destination)
+    rows = connection.execute(query).all()
+    return rows

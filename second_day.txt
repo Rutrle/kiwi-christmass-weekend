@@ -11,3 +11,5 @@ server rendering:
     od django
 
     192.168.51.38.3000
+
+    tailwind == bootstrap, variabilnější

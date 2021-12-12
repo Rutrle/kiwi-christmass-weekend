@@ -64,15 +64,15 @@ class JoinTable():
         query = select([Journeys, aJourneys]).join(
             aJourneys, Journeys.c.destination == aJourneys.c.source
         ).where(and_(
-            Journeys.c.source == source, Journeys.c.destination == destination,
+            Journeys.c.source == source, aJourneys.c.destination == destination,
             Journeys.c.departure_datetime >= departure
         )
         )
         with database_connection() as conn:
             results = conn.execute(query).fetchall()
 
-        return results
-
+            return results
+        ''' 
         for combination in results:
             yield {
                 "source": combination["source"],
@@ -81,10 +81,11 @@ class JoinTable():
                 "departure_datetime": combination["departure_datetime"],
                 "arrival_datetime": combination["arrival_datetime_1"]
             }
+        '''
 
 
 if __name__ == '__main__':
-    join_table = JoinTable('brno', 'kosice', datetime.now())
+    join_table = JoinTable('brno', 'kosice', datetime.today())
     g = join_table.join_table_results
 
     print("res")

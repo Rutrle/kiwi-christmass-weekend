@@ -167,7 +167,12 @@ class RegioParser:
         maybe_value = self.redis.get(key)
         if maybe_value is None:
             return None
-        return json.loads(maybe_value)
+
+        try:
+            return json.loads(maybe_value)
+
+        except json.decoder.JSONDecodeError:
+            return None
 
     def redis_save_location(self, location, id):
         location = slugify(location, separator='_')
@@ -181,7 +186,10 @@ class RegioParser:
 
         if maybe_value is None:
             return None
-        return json.loads(maybe_value)
+        try:
+            return json.loads(maybe_value)
+        except json.decoder.JSONDecodeError:
+            return None
 
     def postgres_save_journey(self, routes):
         for route in routes:

@@ -20,3 +20,6 @@ __konec___
 dependency injection - zjistit si o tom víc - Depends v FastApi
 
 ____man  in the middla proxy
+
+unicode character that does not render - problem with print
+- never assume that data that people are working with are correct - interviews and so on

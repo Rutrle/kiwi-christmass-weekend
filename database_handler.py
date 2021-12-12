@@ -49,6 +49,12 @@ def database_connection():
         yield connection
 
 
+def get_journeys(connection: Connection, destination: str) -> List[Row]:
+    query = select(Journeys).where(Journeys.c.destination == destination)
+    rows = connection.execute(query).all()
+    return rows
+
+
 class JoinTable():
     def __init__(self, source, destination, departure: datetime):
         self.source = slugify(source, separator='_')

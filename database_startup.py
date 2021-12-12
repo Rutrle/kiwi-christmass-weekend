@@ -1,4 +1,3 @@
-
 from sqlalchemy.dialects.postgresql import ENUM, TIMESTAMP
 from sqlalchemy import Column, Integer, MetaData, Numeric, Sequence, String, Table, TEXT, UniqueConstraint, create_engine
 from contextlib import contextmanager

@@ -4,7 +4,7 @@ from fastapi import FastAPI
 from fastapi.encoders import jsonable_encoder
 from scraper import RegioParser
 from fastapi.middleware.cors import CORSMiddleware
-
+from database_handler import JoinTable
 app = FastAPI()
 origins = [
     "http://localhost.tiangolo.com",
@@ -28,3 +28,11 @@ async def regio_paths(origin: str, destination: str, departure: datetime, passen
     parser_data = RegioParser(
         origin, destination, departure, passengers, to_date)
     return parser_data.all_routes[0]
+
+''' 
+@app.get("/search/database")
+async def regio_paths(origin: str, destination: str, departure: datetime, passengers: Optional[int] = None, to_date: Optional[datetime] = None):
+    parser_data = RegioParser(
+        origin, destination, departure, passengers, to_date)
+    return parser_data.all_routes[0]
+'''

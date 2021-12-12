@@ -1,0 +1,13 @@
+vs code nástroj na databáze?
+
+sql alchemy umí i raw sql input, není to lepší?
+
+zjistit jak fungujou dependencies
+
+____frontend___
+server rendering:
+    Jinja2 + fastapi
+
+    od django
+
+    192.168.51.38.3000

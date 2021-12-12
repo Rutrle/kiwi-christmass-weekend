@@ -5,7 +5,7 @@ import argparse
 from slugify import slugify
 from redis import Redis
 import datetime
-from database_hangler import database_connection, create_journey, get_journeys
+from database_handler import database_connection, create_journey, get_journeys
 
 
 def user_input():
@@ -32,11 +32,10 @@ class RegioParser:
 
         self.user_origin = user_origin
         self.user_destination = user_destination
-        self.user_date = datetime.datetime.fromisoformat(user_date)
+        self.user_date = user_date
         self.passengers = passengers
 
-        self.date_to = datetime.datetime.fromisoformat(date_to)
-
+        self.date_to = date_to
         self.all_routes = []
 
         while self.user_date <= self.date_to:
@@ -130,7 +129,6 @@ class RegioParser:
         response = requests.get(host,
                                 params=params)
         response = response.json()
-        print(response)
         response_routes = response['routes']
         cleaned_routes = []
 
@@ -141,7 +139,7 @@ class RegioParser:
                 "source": source,
                 "destination": destination,
                 "fare": {
-                    "amount": route['priceFrom'],
+                    "amount": float(route['priceFrom']),
                     "currency": "EUR"
                 },
                 "type": route['vehicleTypes'],
@@ -187,8 +185,6 @@ class RegioParser:
 
     def postgres_save_journey(self, routes):
         for route in routes:
-            print(route['arrival_datetime'])
-            print(route)
             data = {
                 "source": route['source'],
                 "destination": route['destination'],

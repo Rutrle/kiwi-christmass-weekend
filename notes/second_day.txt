@@ -18,3 +18,5 @@ server rendering:
 coldpen - good place for stealing
 __konec___
 dependency injection - zjistit si o tom víc - Depends v FastApi
+
+____man  in the middla proxy

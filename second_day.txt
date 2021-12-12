@@ -4,6 +4,8 @@ sql alchemy umí i raw sql input, není to lepší?
 
 zjistit jak fungujou dependencies
 
+yield přebije return a udělá to nesmysl, bacha
+
 ____frontend___
 server rendering:
     Jinja2 + fastapi
@@ -13,3 +15,6 @@ server rendering:
     192.168.51.38.3000
 
     tailwind == bootstrap, variabilnější
+
+__konec___
+dependency injection - zjistit si o tom víc - Depends v FastApi

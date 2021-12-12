@@ -1,4 +1,5 @@
 from datetime import datetime
+from slugify.slugify import slugify
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.engine import Connection, Row
 from typing import Optional, List
@@ -48,16 +49,30 @@ def database_connection():
         yield connection
 
 
-def get_journeys(connection: Connection, destination: str) -> List[Row]:
-    query = select(Journeys).where(Journeys.c.destination == destination)
-    rows = connection.execute(query).all()
-    return rows
-
-
 class JoinTable():
     def __init__(self, source, destination, departure: datetime):
+        self.source = slugify(source, separator='_')
+        self.destination = slugify(destination, separator='_')
+
         self.join_table_results = self.join_table(
-            source, destination, departure)
+            self.source, self.destination, departure)
+
+        self.direct_results = self.get_direct_paths(
+            self.source, self.destination, departure)
+
+    def get_direct_paths(self, source: str, destination: str, departure: datetime):
+        query = select(Journeys).where(Journeys.c.destination == destination)
+
+        with database_connection() as conn:
+            rows = conn.execute(query).all()
+
+        return rows
+        '''
+        def get_journeys(connection: Connection, destination: str) -> List[Row]:
+        query = select(Journeys).where(Journeys.c.destination == destination)
+        rows = connection.execute(query).all()
+        return rows
+        '''
 
     def join_table(self, source: str, destination: str, departure: datetime):
         aJourneys = alias(Journeys)
@@ -65,32 +80,19 @@ class JoinTable():
             aJourneys, Journeys.c.destination == aJourneys.c.source
         ).where(and_(
             Journeys.c.source == source, aJourneys.c.destination == destination,
-            Journeys.c.departure_datetime >= departure
+            Journeys.c.departure_datetime >= departure,
+            Journeys.c.arrival_datetime < aJourneys.c.departure_datetime
         )
         )
         with database_connection() as conn:
             results = conn.execute(query).fetchall()
 
             return results
-        ''' 
-        for combination in results:
-            yield {
-                "source": combination["source"],
-                "stopover": combination["destination"],
-                "destination": combination["destination_1"],
-                "departure_datetime": combination["departure_datetime"],
-                "arrival_datetime": combination["arrival_datetime_1"]
-            }
-        '''
 
 
 if __name__ == '__main__':
-    join_table = JoinTable('brno', 'kosice', datetime.today())
+    join_table = JoinTable('Brno', 'Košice', datetime.today())
     g = join_table.join_table_results
-
-    print("res")
-    print(list(g))
-    print('_'*40 + 'results')
-
-    for result in join_table.join_table_results:
-        print(result)
+    print('_'*50)
+    print(list(g)[0])
+    print(join_table.direct_results[0])
